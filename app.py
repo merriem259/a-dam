@@ -218,7 +218,7 @@ def style_risk_column(df, risk_col):
             return 'background-color: #7f1d1d; color: #fca5a5; font-weight: bold;'
         else:
             return 'background-color: #14532d; color: #86efac; font-weight: bold;'
-    return df.style.applymap(color_risk, subset=[risk_col])
+    return df.style.map(color_risk, subset=[risk_col])
 
 
 if login_to_gee():
