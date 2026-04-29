@@ -1,9 +1,0 @@
-streamlit
-earthengine-api
-pandas
-numpy
-plotly
-google-auth
-scikit-learn
-folium
-streamlit-folium
