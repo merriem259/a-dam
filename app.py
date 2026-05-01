@@ -193,7 +193,7 @@ with st.sidebar:
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
             </svg>
-            🌍 OPEN GOOGLE EARTH ENGINE
+             OPEN GOOGLE EARTH ENGINE
         </a>
         ''',
         unsafe_allow_html=True
@@ -205,7 +205,7 @@ with st.sidebar:
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
             </svg>
-            📍 VIEW DAM ON GEE MAP
+            VIEW DAM ON GEE MAP
         </a>
         ''',
         unsafe_allow_html=True
@@ -509,7 +509,7 @@ if login_to_gee():
             )
 
 else:
-    st.error("❌ Google Earth Engine authentication failed. Please check your service account credentials in Streamlit Secrets.")
+    st.error("Google Earth Engine authentication failed. Please check your service account credentials in Streamlit Secrets.")
     st.markdown(
         '''
         **To fix this:**
