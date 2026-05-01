@@ -19,10 +19,6 @@ st.set_page_config(
     page_icon="🛰"
 )
 
-# INITIALIZE SECURITY STATE
-if 'system_compromised' not in st.session_state:
-    st.session_state.system_compromised = False
-
 # =========================================================
 # ADVANCED CUSTOM DESIGN (DARK MODE HUD UI)
 # =========================================================
@@ -75,34 +71,56 @@ st.markdown("""
         box-shadow: 0 0 10px #22c55e;
         animation: pulse 2s infinite;
     }
-    .status-dot-red {
-        background-color: #ef4444;
-        box-shadow: 0 0 10px #ef4444;
-    }
     @keyframes pulse {
         0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
         70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
         100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
+    /* GEE Button styling */
+    .gee-link-btn {
+        display: block;
+        width: 100%;
+        background: linear-gradient(135deg, #1a3a2a 0%, #0d2b1e 100%);
+        border: 1px solid #16a34a;
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: #4ade80 !important;
+        text-decoration: none !important;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        margin-top: 4px;
+    }
+    .gee-link-btn:hover {
+        background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+        border-color: #22c55e;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+        color: #86efac !important;
+    }
+    .gee-link-btn svg {
+        vertical-align: middle;
+        margin-right: 6px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# HEADER WITH SECURITY LOGIC
-status_label = "SYS.ONLINE" if not st.session_state.system_compromised else "SYS.COMPROMISED"
-status_color = "#22c55e" if not st.session_state.system_compromised else "#ef4444"
-dot_class = "status-dot" if not st.session_state.system_compromised else "status-dot status-dot-red"
-
+# HEADER
 col1, col2, col3 = st.columns([6, 2, 1])
 with col1:
     st.markdown('<h1 style="margin:0; font-size: 2.5rem; color:#fff;">A-DAM</h1>', unsafe_allow_html=True)
     st.markdown('<div style="color:#94a3b8; font-size: 0.9rem; letter-spacing: 1px;">ALGERIAN DAMS INTELLIGENCE • MONITORING & FORECASTING</div>', unsafe_allow_html=True)
 with col3:
-    st.markdown(f'''
+    st.markdown('''
     <div style="text-align:right; margin-top:15px;">
-        <div style="color:{status_color}; font-size:0.75rem; display:flex; align-items:center; justify-content:flex-end; gap:5px;">
-            <span class="{dot_class}"></span> {status_label}
+        <div style="color:#22c55e; font-size:0.75rem; display:flex; align-items:center; justify-content:flex-end; gap:5px;">
+            <span class="status-dot"></span> SYS.ONLINE
         </div>
-        <div style="color:#64748b; font-family:\'JetBrains Mono\'; font-size:0.75rem;">V.2.4.2</div>
+        <div style="color:#64748b; font-family:'JetBrains Mono'; font-size:0.75rem;">V.2.4.2</div>
     </div>
     ''', unsafe_allow_html=True)
 
@@ -112,7 +130,6 @@ with col3:
 @st.cache_resource
 def login_to_gee():
     try:
-        # ✅ MODIFIÉ : lit la clé depuis les Secrets Streamlit Cloud
         gee_secrets = dict(st.secrets["gee"])
         credentials = service_account.Credentials.from_service_account_info(
             gee_secrets,
@@ -147,16 +164,58 @@ with st.sidebar:
     st.markdown("### MISSION CONTROL")
     selected_dam = st.selectbox("Select Dam Target", list(DAMS_DB.keys()))
     coords = DAMS_DB[selected_dam]
-    
+
+    lon_sidebar, lat_sidebar = coords[0], coords[1]
+
     if st.button("⚡ REFRESH DATA STREAM", use_container_width=True):
         st.cache_data.clear()
-        st.session_state.system_compromised = False
         st.rerun()
 
     st.markdown("---")
-    if st.button("☣️ INJECT SYSTEM ANOMALY", type="secondary", use_container_width=True):
-        st.session_state.system_compromised = True
-        st.rerun()
+
+    # ── GEE link button: ouvre directement l'éditeur de code GEE ──
+    # On construit une URL qui centre la carte sur le barrage sélectionné
+    gee_url = (
+        f"https://code.earthengine.google.com/"
+        f"?scriptPath=users%2Fexamples%2FDefault%3A"
+        f"&lon={lon_sidebar}&lat={lat_sidebar}&zoom=12"
+    )
+
+    # Lien direct vers l'explorateur de données GEE (catalogue)
+    gee_catalog_url = "https://developers.google.com/earth-engine/datasets"
+
+    # URL vers l'éditeur GEE (Code Editor)
+    gee_editor_url = "https://code.earthengine.google.com/"
+
+    st.markdown(
+        f'''
+        <a href="{gee_editor_url}" target="_blank" class="gee-link-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+            </svg>
+            🌍 OPEN GOOGLE EARTH ENGINE
+        </a>
+        ''',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        f'''
+        <a href="https://code.earthengine.google.com/?lon={lon_sidebar}&lat={lat_sidebar}&zoom=12" target="_blank" class="gee-link-btn" style="margin-top:8px; border-color:#0ea5e9; color:#38bdf8 !important; background: linear-gradient(135deg, #0c2a3d 0%, #071e2e 100%);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+            </svg>
+            📍 VIEW DAM ON GEE MAP
+        </a>
+        ''',
+        unsafe_allow_html=True
+    )
+
+    st.markdown("")
+    st.markdown(
+        '<div style="color:#475569; font-size:0.7rem; text-align:center; padding:4px;">Sources: Sentinel-2 SR · CHIRPS · GEE</div>',
+        unsafe_allow_html=True
+    )
 
 # =========================================================
 # DATA ENGINE
@@ -192,17 +251,26 @@ def fetch_live_data(lon, lat):
         features = processed.map(extract_stats).filter(ee.Filter.notNull(['NDTI'])).getInfo()['features']
         df = pd.DataFrame([f['properties'] for f in features])
         df['date'] = pd.to_datetime(df['date'])
-        
+
         latest_img = processed.sort('system:time_start', False).first()
-        last_acq = datetime.utcfromtimestamp(latest_img.get('system:time_start').getInfo() / 1000).strftime('%Y-%m-%d %H:%M:%S UTC')
-        
+        last_acq = datetime.utcfromtimestamp(
+            latest_img.get('system:time_start').getInfo() / 1000
+        ).strftime('%Y-%m-%d %H:%M:%S UTC')
+
         # CHIRPS Rain
-        chirps = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY').filterBounds(aoi_buffer).filterDate(df['date'].min().strftime('%Y-%m-%d'), today)
-        rain_f = chirps.map(lambda i: ee.Feature(None, {'date': i.date().format('YYYY-MM-dd'), 'rainfall_mm': i.reduceRegion(ee.Reducer.mean(), aoi_buffer, 5000).get('precipitation')})).getInfo()['features']
+        chirps = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
+                  .filterBounds(aoi_buffer)
+                  .filterDate(df['date'].min().strftime('%Y-%m-%d'), today))
+        rain_f = chirps.map(
+            lambda i: ee.Feature(None, {
+                'date': i.date().format('YYYY-MM-dd'),
+                'rainfall_mm': i.reduceRegion(ee.Reducer.mean(), aoi_buffer, 5000).get('precipitation')
+            })
+        ).getInfo()['features']
         rain_df = pd.DataFrame([f['properties'] for f in rain_f])
         rain_df['date'] = pd.to_datetime(rain_df['date'])
         df = df.merge(rain_df, on='date', how='left').fillna(0)
-        
+
         return df.sort_values('date'), latest_img, last_acq, None
     except Exception as e:
         return pd.DataFrame(), None, None, str(e)
@@ -226,13 +294,9 @@ if login_to_gee():
     df, latest_image, last_acquisition, error_msg = fetch_live_data(lon, lat)
 
     if not df.empty:
-        # SECURITY OVERRIDE
         latest_row = df.iloc[-1]
-        current_ndti = 5.0 if st.session_state.system_compromised else latest_row['NDTI']
+        current_ndti = latest_row['NDTI']
         current_ndwi = latest_row['NDWI']
-        
-        if st.session_state.system_compromised:
-            st.error("🚨 CRITICAL: ISOLATION FOREST DETECTED COMPROMISED DATA STREAM. STATUS: INSECURE.")
 
         tab1, tab2, tab3 = st.tabs([" LIVE FEED", " PREDICTIVE AI", " INTELLIGENCE"])
 
@@ -244,7 +308,12 @@ if login_to_gee():
             with c1:
                 st.markdown('<div class="section-header">SATELLITE VIEW</div>', unsafe_allow_html=True)
                 region = ee.Geometry.Point([lon, lat]).buffer(3500).bounds()
-                url = latest_image.getThumbURL({'bands':['B4','B3','B2'], 'min':0, 'max':3000, 'region':region, 'dimensions':1024})
+                url = latest_image.getThumbURL({
+                    'bands': ['B4', 'B3', 'B2'],
+                    'min': 0, 'max': 3000,
+                    'region': region,
+                    'dimensions': 1024
+                })
                 st.markdown(f'<div class="sat-frame"><img src="{url}" style="width:100%;"></div>', unsafe_allow_html=True)
 
             with c2:
@@ -259,10 +328,21 @@ if login_to_gee():
                     unsafe_allow_html=True
                 )
 
-                ndti_color = "#ef4444" if st.session_state.system_compromised else "#e11d48"
-                st.markdown(f'<div class="hud-card" style="border-left-color:{ndti_color}"><div style="font-size:0.75rem;">NDTI (Turbidity)</div><div class="metric-value" style="font-size:1.8rem; color:{ndti_color}">{current_ndti:.4f}</div></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="hud-card"><div style="font-size:0.75rem;">NDWI (Water)</div><div class="metric-value" style="font-size:1.8rem; color:#3b82f6">{current_ndwi:.4f}</div></div>', unsafe_allow_html=True)
-            
+                st.markdown(
+                    f'<div class="hud-card" style="border-left-color:#e11d48">'
+                    f'<div style="font-size:0.75rem;">NDTI (Turbidity)</div>'
+                    f'<div class="metric-value" style="font-size:1.8rem; color:#e11d48">{current_ndti:.4f}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f'<div class="hud-card">'
+                    f'<div style="font-size:0.75rem;">NDWI (Water)</div>'
+                    f'<div class="metric-value" style="font-size:1.8rem; color:#3b82f6">{current_ndwi:.4f}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
             st.markdown('<div class="section-header">GEOLOCATION</div>', unsafe_allow_html=True)
             m = folium.Map(location=[lat, lon], zoom_start=12, tiles='cartodbdark_matter')
             folium.Circle([lat, lon], radius=1500, color='#06b6d4', fill=True).add_to(m)
@@ -278,14 +358,14 @@ if login_to_gee():
                 df[f'NDTI_lag{lag}'] = df['NDTI'].shift(lag)
                 df[f'NDWI_lag{lag}'] = df['NDWI'].shift(lag)
                 df[f'rain_lag{lag}'] = df['rainfall_mm'].shift(lag)
-            
+
             df_ml = df.dropna()
 
             if len(df_ml) > 10:
                 feature_cols = (
-                    [f'NDTI_lag{i}' for i in [1,2,3]] +
-                    [f'NDWI_lag{i}' for i in [1,2,3]] +
-                    [f'rain_lag{i}' for i in [1,2,3]]
+                    [f'NDTI_lag{i}' for i in [1, 2, 3]] +
+                    [f'NDWI_lag{i}' for i in [1, 2, 3]] +
+                    [f'rain_lag{i}' for i in [1, 2, 3]]
                 )
 
                 model_ndti = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -297,8 +377,7 @@ if login_to_gee():
                 future_dates = [datetime.now().date() + timedelta(days=i) for i in range(1, 8)]
 
                 preds_ndti = []
-                last_row = df[['NDTI', 'NDWI', 'rainfall_mm']].iloc[-3:].values.flatten().tolist()
-                last_lags_ndti = last_row
+                last_lags_ndti = df[['NDTI', 'NDWI', 'rainfall_mm']].iloc[-3:].values.flatten().tolist()
                 for _ in range(7):
                     p = model_ndti.predict([last_lags_ndti])[0]
                     preds_ndti.append(p)
@@ -317,14 +396,6 @@ if login_to_gee():
                 fig.add_trace(go.Scatter(x=df['date'], y=df['NDWI'], name="NDWI Historical", line=dict(color='#a855f7')))
                 fig.add_trace(go.Scatter(x=future_dates, y=preds_ndwi, name="NDWI AI Forecast", line=dict(color='#f0abfc', dash='dot')))
 
-                if st.session_state.system_compromised:
-                    fig.add_trace(go.Scatter(
-                        x=[df['date'].iloc[-1]], y=[5.0],
-                        mode='markers',
-                        marker=dict(color='red', size=15, symbol='x'),
-                        name="ALERT"
-                    ))
-                
                 fig.update_layout(
                     template="plotly_dark",
                     height=400,
@@ -356,4 +427,94 @@ if login_to_gee():
         # =================================================
         with tab3:
             st.markdown('<div class="section-header">INTELLIGENCE REPORT</div>', unsafe_allow_html=True)
+
             st.info("System uses Sentinel-2 Optical Imagery and CHIRPS Precipitation data to monitor dams in Algeria.")
+
+            st.markdown("#### 📡 DATA SOURCES")
+            col_a, col_b = st.columns(2)
+
+            with col_a:
+                st.markdown(
+                    '''
+                    <div class="hud-card" style="border-left-color:#22c55e;">
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:6px;">OPTICAL IMAGERY</div>
+                        <div style="color:#e2e8f0; font-size:0.9rem;">
+                            <strong>Copernicus Sentinel-2 SR Harmonized</strong><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Collection: COPERNICUS/S2_SR_HARMONIZED</span><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Resolution: 10m · Revisit: ~5 days</span><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Bands used: B3 (Green), B4 (Red), B8 (NIR)</span>
+                        </div>
+                    </div>
+                    ''',
+                    unsafe_allow_html=True
+                )
+
+            with col_b:
+                st.markdown(
+                    '''
+                    <div class="hud-card" style="border-left-color:#3b82f6;">
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:6px;">PRECIPITATION DATA</div>
+                        <div style="color:#e2e8f0; font-size:0.9rem;">
+                            <strong>CHIRPS Daily Precipitation</strong><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Collection: UCSB-CHG/CHIRPS/DAILY</span><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Resolution: ~5km · Daily updates</span><br>
+                            <span style="color:#64748b; font-size:0.8rem;">Variable: precipitation (mm/day)</span>
+                        </div>
+                    </div>
+                    ''',
+                    unsafe_allow_html=True
+                )
+
+            st.markdown("####  COMPUTED INDICES")
+            st.markdown(
+                '''
+                <div class="hud-card">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div>
+                            <div style="color:#e11d48; font-weight:700; font-size:0.9rem;">NDTI — Normalized Difference Turbidity Index</div>
+                            <div style="color:#94a3b8; font-size:0.8rem; margin-top:4px;">Formula: (B4 - B3) / (B4 + B3)</div>
+                            <div style="color:#64748b; font-size:0.78rem; margin-top:4px;">
+                                Detects water turbidity. High values (&gt; 0.2) indicate elevated sediment or pollution loads. 
+                                Computed over a 1500m buffer around the dam center.
+                            </div>
+                        </div>
+                        <div>
+                            <div style="color:#3b82f6; font-weight:700; font-size:0.9rem;">NDWI — Normalized Difference Water Index</div>
+                            <div style="color:#94a3b8; font-size:0.8rem; margin-top:4px;">Formula: (B3 - B8) / (B3 + B8)</div>
+                            <div style="color:#64748b; font-size:0.78rem; margin-top:4px;">
+                                Highlights open water surfaces. Positive values indicate water presence; 
+                                negative values may signal drought or water level drop.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+
+            st.markdown("####  AI FORECASTING MODEL")
+            st.markdown(
+                '''
+                <div class="hud-card" style="border-left-color:#a855f7;">
+                    <div style="color:#e2e8f0; font-size:0.9rem;">
+                        <strong>Random Forest Regressor</strong> (scikit-learn)<br>
+                        <span style="color:#64748b; font-size:0.8rem;">
+                            100 estimators · Trained on lagged NDTI, NDWI and rainfall features (t-1, t-2, t-3)<br>
+                            Produces a 7-day rolling forecast for both turbidity and water surface indices.
+                        </span>
+                    </div>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+
+else:
+    st.error("❌ Google Earth Engine authentication failed. Please check your service account credentials in Streamlit Secrets.")
+    st.markdown(
+        '''
+        **To fix this:**
+        1. Go to [Google Earth Engine](https://code.earthengine.google.com/) and create a service account.
+        2. Add the JSON key to your Streamlit secrets under `[gee]`.
+        3. Ensure the service account has Earth Engine access.
+        '''
+    )
